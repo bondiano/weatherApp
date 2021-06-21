@@ -1,21 +1,54 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Alert, Text } from 'react-native';
+import * as Location from 'expo-location';
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+import { Loading } from './Loading';
+import { Weather } from './Weather';
+
+import { WeatherTypes, API_KEY } from './constants'
+
+
+const getWeather = async (latitude: number, longitude: number): Promise<{ temp: number, condition: WeatherTypes }> => {
+  const { data: { main: { temp }, weather } } = await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`);
+
+  return { temp, condition: weather[0].main }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [temp, setTemp] = useState<number>()
+  const [condition, setCondition] = useState<WeatherTypes>()
+
+  useEffect(() => {
+    const getLocation = async () => {
+      try {
+        setIsLoading(true)
+        await Location.requestForegroundPermissionsAsync();
+        const { coords: { latitude, longitude } } = await Location.getCurrentPositionAsync();
+        const { condition, temp } = await getWeather(latitude, longitude);
+
+        setTemp(temp)
+        setCondition(condition)
+      } catch (error) {
+        Alert.alert('Не могу определить местоположение', 'Очень грустно :(');
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    getLocation()
+  }, [])
+
+    if (isLoading) {
+      return <Loading />
+    }
+
+    if (temp === undefined || condition === undefined) {
+      return <Text>Ошибочка вышла :(</Text>
+    }
+
+    return (
+      <Weather temp={Math.round(temp)} condition={condition} />
+    );
+}
