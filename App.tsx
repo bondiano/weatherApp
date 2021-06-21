@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Alert, Text } from 'react-native';
+import { Alert } from 'react-native';
 import * as Location from 'expo-location';
 
 import { Loading } from './Loading';
 import { Weather } from './Weather';
+import { Error } from './Error'
 
 import { WeatherTypes, API_KEY } from './constants'
 
@@ -45,7 +46,7 @@ export default function App() {
     }
 
     if (temp === undefined || condition === undefined) {
-      return <Text>Ошибочка вышла :(</Text>
+      return <Error />
     }
 
     return (
